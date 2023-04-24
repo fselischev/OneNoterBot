@@ -5,6 +5,7 @@ https://t.me/OneNoterBot
 
 TODO: <br>
 
+* add "да/нет" support
 * create new db table with name and password for authentication
 * add friendly printing notes format
 * make your code looks nice
