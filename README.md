@@ -1,7 +1,5 @@
 # OneNoterBot
 
-![tg.png](..%2F..%2FDownloads%2Ftg.png)
-
 ## General information
 
 Not yet deployed <br>
