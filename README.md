@@ -1,15 +1,26 @@
 # OneNoterBot
 
+![tg.png](..%2F..%2FDownloads%2Ftg.png)
+
+## General information
+
 Not yet deployed <br>
-https://t.me/OneNoterBot
+OneNoterBot is created for personal usage and does not qualify as a fully working product
 
-TODO: <br>
+## Usage
 
-* add "да/нет" support
-* create new db table with name and password for authentication
-* add friendly printing notes format
-* make your code looks nice
-* add logout after 5 minutes
-* add keyboard with commands
+Firstly you need to go on that link https://t.me/OneNoterBot for starting with OneNoter
 
-*optional: add "/settings"*
+* /start - Authentication, first thing that you need to do
+* /notes - All of your notes will be printed
+* /clear - Deletes 1 note by number. After command, you need to verify your choice and pick number of note that will be
+  deleted, <br>
+  for example: yes, 1
+* /clearall - Deletes all of your notes
+
+That's it, if you want to make a note, you just type it to bot. Some time some day
+
+## Author
+
+* https://github.com/FedorrrS
+* https://t.me/fselischev
