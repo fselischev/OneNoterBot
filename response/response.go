@@ -30,18 +30,18 @@ func (r *Response) GiveNotes(notes []interface{}) string {
 	return fmt.Sprintf("%s:\n"+strings.Join(lo.Map(notes, func(v interface{}, i int) string { return v.(string) }), "\n"), pref)
 }
 
-func (r *Response) AuthorizationSuccess(username string) string {
+func (r *Response) AuthorizationSuccess(firstname string) string {
 	switch r.lang {
 	case "en":
-		return fmt.Sprintf("Authorized success, %s\nNow, enter your notes", username)
+		return fmt.Sprintf("Authorized success, %s\nNow, enter your notes", firstname)
 	case "ru":
-		return fmt.Sprintf("Авторизация прошла успешно, %s\nТеперь вы можете делать заметки", username)
+		return fmt.Sprintf("Авторизация прошла успешно, %s\nТеперь вы можете делать заметки", firstname)
 	default:
 		return notSupported
 	}
 }
 
-func (r *Response) DataSavedSuccess(username string) string {
+func (r *Response) DataSavedSuccess(firstname string) string {
 	var pref string
 	switch r.lang {
 	case "en":
@@ -51,8 +51,8 @@ func (r *Response) DataSavedSuccess(username string) string {
 	default:
 		return notSupported
 	}
-	if username != "" {
-		return fmt.Sprintf("%s, %s", pref, username)
+	if firstname != "" {
+		return fmt.Sprintf("%s, %s", pref, firstname)
 	}
 	return r.AuthorizationFailed()
 }
@@ -60,9 +60,9 @@ func (r *Response) DataSavedSuccess(username string) string {
 func (r *Response) WhoAmI(username string, upd tgbotapi.Update) string {
 	switch r.lang {
 	case "en":
-		return fmt.Sprintf("You are loged as %s\ntg handle @%s", username, upd.Message.From.UserName)
+		return fmt.Sprintf("You are loged with password %s\ntg handle @%s", username, upd.Message.From.UserName)
 	case "ru":
-		return fmt.Sprintf("Вы авторизованы как %s\ntg handle @%s", username, upd.Message.From.UserName)
+		return fmt.Sprintf("Вы авторизованы с паролем %s\ntg handle @%s", username, upd.Message.From.UserName)
 	default:
 		return notSupported
 	}
@@ -156,6 +156,17 @@ func (r *Response) ClearYes() string {
 	}
 }
 
+func (r *Response) ClearNo() string {
+	switch r.lang {
+	case "en":
+		return en.ClearNoEN
+	case "ru":
+		return ru.ClearNoRU
+	default:
+		return notSupported
+	}
+}
+
 func (r *Response) ClearallNo() string {
 	switch r.lang {
 	case "en":
@@ -183,6 +194,17 @@ func (r *Response) ClearallIncorrect() string {
 		return en.ClearallIncorrectEN
 	case "ru":
 		return ru.ClearallIncorrectRU
+	default:
+		return notSupported
+	}
+}
+
+func (r *Response) ClearIncorrect() string {
+	switch r.lang {
+	case "en":
+		return en.ClearIncorrectEN
+	case "ru":
+		return ru.ClearIncorrectRU
 	default:
 		return notSupported
 	}

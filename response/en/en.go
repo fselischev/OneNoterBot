@@ -3,7 +3,7 @@ package en
 const (
 	GreetingEN = `
 	Hello, User!
-	Please, authorize first, then you can write your notes 🗒🗒🗒`
+	Please, authorize first with password, then you can write your notes 🗒🗒🗒`
 	HelpEN = `
 	/start - Authentication, first thing that you need to do
 	/notes - All of your notes will be printed
@@ -23,6 +23,8 @@ const (
 This command in not supported :(
 /help shows all available commands`
 	ClearYesEN          = "Note is successfully deleted"
+	ClearNoEN           = "There is no note with this number, try again with correct one"
+	ClearIncorrectEN    = "Incorrect answer.. Write yes or no and the number, for example: yes, 1"
 	ClearallYesEN       = "Your notes are successfully deleted!"
 	ClearallNoEN        = "Well, your notes stayed in place"
 	ClearallIncorrectEN = "Incorrect answer.. Write yes or no"
