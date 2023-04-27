@@ -1,37 +1,39 @@
 package main
 
 import (
-	"OneNoterBot/pkg/telegram"
-	_ "OneNoterBot/response"
+	_ "OneNoterBot/internal/response"
+	"OneNoterBot/internal/telegram"
+	"OneNoterBot/pkg/logging"
 	"database/sql"
 	"flag"
 	_ "github.com/go-sql-driver/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"log"
 )
 
 func main() {
+	logger := logging.GetLogger()
+	logger.Info("Open db")
 	db, err := sql.Open("mysql", "root@tcp(127.0.0.1:3306)/golang")
 	if err != nil {
-		log.Fatal("Can't open database")
+		logger.Fatal("Can't open database")
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-			log.Fatal("Can't close database", err)
+			logger.Fatal("Can't close database", err)
 		}
 	}(db)
 
-	bot, err := tgbotapi.NewBotAPI(mustToken())
+	bot, err := tgbotapi.NewBotAPI(mustToken(logger))
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
-
 	telegramBot := telegram.NewBot(bot)
-	telegramBot.Start(db)
+	logger.Info("Bot starter")
+	telegramBot.Start(logger, db)
 }
 
-func mustToken() string {
+func mustToken(logger *logging.Logger) string {
 	token := flag.String(
 		"tg-bot-token",
 		"",
@@ -39,7 +41,7 @@ func mustToken() string {
 	)
 	flag.Parse()
 	if *token == "" {
-		log.Fatal("token is not specified")
+		logger.Fatal("token is not specified")
 	}
 	return *token
 }

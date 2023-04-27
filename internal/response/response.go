@@ -1,8 +1,8 @@
 package response
 
 import (
-	"OneNoterBot/response/en"
-	"OneNoterBot/response/ru"
+	"OneNoterBot/internal/response/en"
+	"OneNoterBot/internal/response/ru"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/samber/lo"

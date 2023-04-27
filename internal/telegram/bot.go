@@ -1,14 +1,14 @@
 package telegram
 
 import (
-	"OneNoterBot/e"
-	"OneNoterBot/response"
+	"OneNoterBot/internal/response"
+	"OneNoterBot/pkg/e"
+	"OneNoterBot/pkg/logging"
 	"database/sql"
 	"fmt"
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/samber/lo"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -23,11 +23,9 @@ func NewBot(bot *tgbotapi.BotAPI) *Bot {
 
 //nolint:funlen
 //nolint:gocognit
-func (b *Bot) Start(db *sql.DB) {
+func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 	updConfig := tgbotapi.NewUpdate(0)
-
 	updConfig.Timeout = 30
-
 	upds := b.bot.GetUpdatesChan(updConfig)
 
 	var (
@@ -70,13 +68,13 @@ func (b *Bot) Start(db *sql.DB) {
 					numberedNotes.Clear()
 					smlp, err := db.Query(fmt.Sprintf("SELECT note FROM users WHERE password = '%s'", password))
 					if err != nil {
-						log.Fatal(e.Wrap("Error: selecting notes in db", err))
+						logger.Fatal(e.Wrap("Error: selecting notes in db", err))
 					}
 					i := 1
 					for smlp.Next() {
 						var note string
 						if err := smlp.Scan(&note); err != nil {
-							log.Fatal(e.Wrap("Error: scanning sample note", err))
+							logger.Fatal(e.Wrap("Error: scanning sample note", err))
 						}
 						numberedNotes.Put(i, fmt.Sprintf("%d. %s", i, note))
 						i++
@@ -127,7 +125,7 @@ func (b *Bot) Start(db *sql.DB) {
 			switch {
 			case isStart:
 				password = upd.Message.Text
-				/* DEBUG */ log.Println(resp.WhoAmI(password, upd))
+				/* DEBUG */ logger.Info(resp.WhoAmI(password, upd))
 				isStart = false
 				msg.Text = resp.AuthorizationSuccess(firstname)
 			case isClear:
@@ -145,13 +143,13 @@ func (b *Bot) Start(db *sql.DB) {
 						v, _ := strconv.Atoi(key)
 						if v > numberedNotes.Size() {
 							msg.Text = resp.ClearNo()
-							b.sendMessage(msg)
+							b.sendMessage(logger, msg)
 							continue
 						}
 						el, _ := numberedNotes.Get(v) /* sure there will be no error */
 						_, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s' AND `note` = '%s'", password, strings.TrimPrefix(el.(string), fmt.Sprintf("%d. ", v))))
 						if err != nil {
-							log.Fatal(e.Wrap("Error: deleting all notes from db", err))
+							logger.Fatal(e.Wrap("Error: deleting all notes from db", err))
 						}
 						msg.Text = resp.ClearYes()
 					}
@@ -169,7 +167,7 @@ func (b *Bot) Start(db *sql.DB) {
 					_, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s'", password))
 					numberedNotes.Clear()
 					if err != nil {
-						log.Fatal(e.Wrap("Error: deleting single note from db", err))
+						logger.Fatal(e.Wrap("Error: deleting single note from db", err))
 					}
 					msg.Text = resp.ClearallYes()
 				case resp.IsNegative(verificationMsg):
@@ -183,19 +181,19 @@ func (b *Bot) Start(db *sql.DB) {
 				for _, note := range notes {
 					_, err := db.Exec(fmt.Sprintf("INSERT INTO users (password, note) VALUES('%s', '%s')", password, strings.TrimSpace(note)))
 					if err != nil {
-						log.Fatal(e.Wrap("Error: inserting data to db", err))
+						logger.Fatal(e.Wrap("Error: inserting data to db", err))
 					}
 				}
 				msg.Text = resp.DataSavedSuccess(firstname)
 				msg.ReplyToMessageID = upd.Message.MessageID
 			}
 		}
-		b.sendMessage(msg)
+		b.sendMessage(logger, msg)
 	}
 }
 
-func (b *Bot) sendMessage(msg tgbotapi.MessageConfig) {
+func (b *Bot) sendMessage(logger *logging.Logger, msg tgbotapi.MessageConfig) {
 	if _, err := b.bot.Send(msg); err != nil {
-		log.Fatal(e.Wrap("Error: sending message to user", err))
+		logger.Fatal(e.Wrap("Error: sending message to user", err))
 	}
 }
