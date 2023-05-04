@@ -29,9 +29,9 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 
 	var (
 		password        string
-		isStart         = false
-		isClear         = false
-		isClearall      = false
+		isStart         bool
+		isClear         bool
+		isClearall      bool
 		numberedNotes   = linkedhashmap.New()
 		verificationMsg string /* for /clear* */
 	)

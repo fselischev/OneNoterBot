@@ -15,7 +15,7 @@ const (
 /help - Prints this information
 	
 	Bot is a very very MVP
-	For any questions, please contact @fselischev`
+	For any questions and bugs found, please contact @fselischev`
 	AuthorizationFailedEN  = `You need to authorize first using /start command`
 	ClearVerificationEN    = `Are you sure about this? Picked note will be deleted`
 	ClearallVerificationEN = `Are you sure about this? All your notes will be deleted`
