@@ -6,11 +6,12 @@ import (
 	"OneNoterBot/pkg/logging"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/emirpasic/gods/maps/linkedhashmap"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/samber/lo"
-	"strconv"
-	"strings"
 )
 
 type Bot struct {
@@ -21,8 +22,6 @@ func NewBot(bot *tgbotapi.BotAPI) *Bot {
 	return &Bot{bot: bot}
 }
 
-//nolint:funlen
-//nolint:gocognit
 func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 	updConfig := tgbotapi.NewUpdate(0)
 	updConfig.Timeout = 30
@@ -42,13 +41,7 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 			continue
 		}
 
-		lang := upd.Message.From.LanguageCode
-		switch lang {
-		case "en", "ru":
-		default:
-			lang = "en"
-		}
-
+		lang := b.Lang(upd, logger)
 		firstname := upd.Message.From.FirstName
 		resp := response.NewResponse(lang)
 		msg := tgbotapi.NewMessage(upd.Message.Chat.ID, "")
@@ -65,20 +58,7 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 					msg.Text = resp.AuthorizationFailed()
 					msg.ReplyToMessageID = upd.Message.MessageID
 				} else {
-					numberedNotes.Clear()
-					smlp, err := db.Query(fmt.Sprintf("SELECT note FROM users WHERE password = '%s'", password))
-					if err != nil {
-						logger.Fatal(e.Wrap("Error: selecting notes in db", err))
-					}
-					i := 1
-					for smlp.Next() {
-						var note string
-						if err := smlp.Scan(&note); err != nil {
-							logger.Fatal(e.Wrap("Error: scanning sample note", err))
-						}
-						numberedNotes.Put(i, fmt.Sprintf("%d. %s", i, note))
-						i++
-					}
+					getNotes(numberedNotes, db, password, logger)
 				}
 				if numberedNotes.Size() == 0 {
 					msg.Text = resp.EmptyNotes()
@@ -86,37 +66,13 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 					msg.Text = resp.GiveNotes(numberedNotes.Values())
 				}
 			case "clear":
-				if password == "" {
-					msg.Text = resp.AuthorizationFailed()
-					msg.ReplyToMessageID = upd.Message.MessageID
-				} else {
-					if numberedNotes.Size() == 0 {
-						msg.Text = resp.EmptyNotes()
-					} else {
-						isClear = true
-						msg.Text = resp.ClearVerification()
-					}
-				}
+				getNotes(numberedNotes, db, password, logger)
+				isClear = ClearHandler(password, &msg, resp, upd, numberedNotes, "")
 			case "clearall":
-				if password == "" {
-					msg.Text = resp.AuthorizationFailed()
-					msg.ReplyToMessageID = upd.Message.MessageID
-				} else {
-					if numberedNotes.Size() == 0 {
-						msg.Text = resp.EmptyNotes()
-					} else {
-						isClearall = true
-						msg.Text = resp.ClearallVerification()
-					}
-				}
+				getNotes(numberedNotes, db, password, logger)
+				isClearall = ClearHandler(password, &msg, resp, upd, numberedNotes, "all")
 			case "whoami":
-				if password == "" {
-					msg.Text = resp.AuthorizationFailed()
-					msg.ReplyToMessageID = upd.Message.MessageID
-				} else {
-					msg.Text = resp.WhoAmI(password, upd)
-					msg.ReplyToMessageID = upd.Message.MessageID
-				}
+				WhoAmIHandler(password, &msg, resp, upd)
 			default:
 				msg.Text = resp.CommandNotSupported()
 				msg.ReplyToMessageID = upd.Message.MessageID
@@ -146,7 +102,10 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 							b.sendMessage(logger, msg)
 							continue
 						}
-						el, _ := numberedNotes.Get(v) /* sure there will be no error */
+						el, ok := numberedNotes.Get(v)
+						if !ok {
+							logger.Fatal("Error: cannot get value from notes map")
+						}
 						_, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s' AND `note` = '%s'", password, strings.TrimPrefix(el.(string), fmt.Sprintf("%d. ", v))))
 						if err != nil {
 							logger.Fatal(e.Wrap("Error: deleting all notes from db", err))
@@ -190,6 +149,34 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 		}
 		b.sendMessage(logger, msg)
 	}
+}
+
+func getNotes(numberedNotes *linkedhashmap.Map, db *sql.DB, password string, logger *logging.Logger) {
+	numberedNotes.Clear()
+	smlp, err := db.Query(fmt.Sprintf("SELECT note FROM users WHERE password = '%s'", password))
+	if err != nil {
+		logger.Fatal(e.Wrap("Error: selecting notes in db", err))
+	}
+	i := 1
+	for smlp.Next() {
+		var note string
+		if err := smlp.Scan(&note); err != nil {
+			logger.Fatal(e.Wrap("Error: scanning sample note", err))
+		}
+		numberedNotes.Put(i, fmt.Sprintf("%d. %s", i, note))
+		i++
+	}
+}
+
+func (b *Bot) Lang(upd tgbotapi.Update, logger *logging.Logger) string {
+	lang := upd.Message.From.LanguageCode
+	switch lang {
+	case "en", "ru":
+	default:
+		logger.Infof("%v language is not supported", lang)
+		lang = "en"
+	}
+	return lang
 }
 
 func (b *Bot) sendMessage(logger *logging.Logger, msg tgbotapi.MessageConfig) {
