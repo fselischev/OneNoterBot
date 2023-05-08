@@ -2,8 +2,8 @@
 
 ## General information
 
-Not yet deployed <br>
-OneNoterBot is created for personal usage and does not qualify as a fully working product
+[Telegram Bot API](https://github.com/go-telegram-bot-api/telegram-bot-api) based TODO-bot <br>
+OneNoterBot is created for personal usage and VK golang dev internship
 
 ## Usage
 

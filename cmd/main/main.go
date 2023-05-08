@@ -29,7 +29,7 @@ func main() {
 		logger.Fatal(err)
 	}
 	telegramBot := telegram.NewBot(bot)
-	logger.Info("Bot started")
+	logger.Info("Bot starter")
 	telegramBot.Start(logger, db)
 }
 

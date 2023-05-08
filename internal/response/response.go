@@ -4,9 +4,10 @@ import (
 	"OneNoterBot/internal/response/en"
 	"OneNoterBot/internal/response/ru"
 	"fmt"
+	"strings"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/samber/lo"
-	"strings"
 )
 
 const notSupported = "not supported"
@@ -27,7 +28,7 @@ func (r *Response) GiveNotes(notes []interface{}) string {
 	case "ru":
 		pref = "Ваши заметки"
 	}
-	return fmt.Sprintf("%s:\n"+strings.Join(lo.Map(notes, func(v interface{}, i int) string { return v.(string) }), "\n"), pref)
+	return fmt.Sprintf("%s:\n"+strings.Join(lo.Map(notes, func(v interface{}, _ int) string { return v.(string) }), "\n"), pref)
 }
 
 func (r *Response) AuthorizationSuccess(firstname string) string {

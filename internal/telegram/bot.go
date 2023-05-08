@@ -33,7 +33,7 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 		isClear         bool
 		isClearall      bool
 		numberedNotes   = linkedhashmap.New()
-		verificationMsg string /* for /clear* */
+		verificationMsg string 
 	)
 
 	for upd := range upds {
@@ -81,7 +81,6 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 			switch {
 			case isStart:
 				password = upd.Message.Text
-				/* DEBUG */ logger.Info(resp.WhoAmI(password, upd))
 				isStart = false
 				msg.Text = resp.AuthorizationSuccess(firstname)
 			case isClear:
@@ -99,15 +98,14 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 						v, _ := strconv.Atoi(key)
 						if v > numberedNotes.Size() {
 							msg.Text = resp.ClearNo()
-							b.sendMessage(logger, msg)
+							b.SendMessage(logger, msg)
 							continue
 						}
 						el, ok := numberedNotes.Get(v)
 						if !ok {
 							logger.Fatal("Error: cannot get value from notes map")
 						}
-						_, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s' AND `note` = '%s'", password, strings.TrimPrefix(el.(string), fmt.Sprintf("%d. ", v))))
-						if err != nil {
+						if _, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s' AND `note` = '%s'", password, strings.TrimPrefix(el.(string), fmt.Sprintf("%d. ", v)))); err != nil {
 							logger.Fatal(e.Wrap("Error: deleting all notes from db", err))
 						}
 						msg.Text = resp.ClearYes()
@@ -123,11 +121,10 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 				switch {
 				case resp.IsPositive(verificationMsg):
 					isClearall = false
-					_, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s'", password))
-					numberedNotes.Clear()
-					if err != nil {
+					if _, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s'", password)); err != nil {
 						logger.Fatal(e.Wrap("Error: deleting single note from db", err))
 					}
+					numberedNotes.Clear()
 					msg.Text = resp.ClearallYes()
 				case resp.IsNegative(verificationMsg):
 					isClearall = false
@@ -138,8 +135,7 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 			default:
 				notes := strings.Split(upd.Message.Text, ",")
 				for _, note := range notes {
-					_, err := db.Exec(fmt.Sprintf("INSERT INTO users (password, note) VALUES('%s', '%s')", password, strings.TrimSpace(note)))
-					if err != nil {
+					if _, err := db.Exec(fmt.Sprintf("INSERT INTO users (password, note) VALUES('%s', '%s')", password, strings.TrimSpace(note))); err != nil {
 						logger.Fatal(e.Wrap("Error: inserting data to db", err))
 					}
 				}
@@ -147,7 +143,7 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 				msg.ReplyToMessageID = upd.Message.MessageID
 			}
 		}
-		b.sendMessage(logger, msg)
+		b.SendMessage(logger, msg)
 	}
 }
 
@@ -178,8 +174,8 @@ func (b *Bot) Lang(upd tgbotapi.Update, logger *logging.Logger) string {
 	}
 	return lang
 }
-
-func (b *Bot) sendMessage(logger *logging.Logger, msg tgbotapi.MessageConfig) {
+ 
+func (b *Bot) SendMessage(logger *logging.Logger, msg tgbotapi.MessageConfig) {
 	if _, err := b.bot.Send(msg); err != nil {
 		logger.Fatal(e.Wrap("Error: sending message to user", err))
 	}
