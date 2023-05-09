@@ -6,6 +6,7 @@ import (
 	"OneNoterBot/pkg/logging"
 	"database/sql"
 	"flag"
+
 	_ "github.com/go-sql-driver/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )

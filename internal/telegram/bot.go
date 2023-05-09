@@ -29,11 +29,9 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 
 	var (
 		password        string
-		isStart         bool
-		isClear         bool
-		isClearall      bool
+		curCommand      = make(map[string]bool, 2)
 		numberedNotes   = linkedhashmap.New()
-		verificationMsg string 
+		verificationMsg string
 	)
 
 	for upd := range upds {
@@ -48,12 +46,12 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 
 		if upd.Message.IsCommand() {
 			switch upd.Message.Command() {
-			case "start":
-				isStart = true
+			case start:
+				curCommand[start] = true
 				msg.Text = resp.Greeting()
-			case "help":
+			case help:
 				msg.Text = resp.Help()
-			case "notes":
+			case notes:
 				if password == "" {
 					msg.Text = resp.AuthorizationFailed()
 					msg.ReplyToMessageID = upd.Message.MessageID
@@ -65,25 +63,28 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 				} else {
 					msg.Text = resp.GiveNotes(numberedNotes.Values())
 				}
-			case "clear":
+			case clear:
 				getNotes(numberedNotes, db, password, logger)
-				isClear = ClearHandler(password, &msg, resp, upd, numberedNotes, "")
-			case "clearall":
+				msg.Text = resp.ClearVerification()
+				curCommand[clear] = ClearHandler(password, &msg, resp, upd, numberedNotes)
+			case clearall:
 				getNotes(numberedNotes, db, password, logger)
-				isClearall = ClearHandler(password, &msg, resp, upd, numberedNotes, "all")
-			case "whoami":
-				WhoAmIHandler(password, &msg, resp, upd)
+				msg.Text = resp.ClearallVerification()
+				curCommand[clearall] = ClearHandler(password, &msg, resp, upd, numberedNotes)
+			case whoami:
+				WhoamiHandler(password, &msg, resp, upd)
 			default:
 				msg.Text = resp.CommandNotSupported()
 				msg.ReplyToMessageID = upd.Message.MessageID
 			}
 		} else {
 			switch {
-			case isStart:
+			case curCommand[start]:
 				password = upd.Message.Text
-				isStart = false
+				curCommand[start] = false
 				msg.Text = resp.AuthorizationSuccess(firstname)
-			case isClear:
+			case curCommand[clear]:
+				curCommand[clear] = false
 				splitMsg := lo.Map(strings.Split(upd.Message.Text, ","), func(s string, _ int) string {
 					return strings.TrimSpace(s)
 				})
@@ -94,7 +95,6 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 						msg.Text = resp.ClearIncorrect()
 					} else {
 						key := splitMsg[1]
-						isClear = false
 						v, _ := strconv.Atoi(key)
 						if v > numberedNotes.Size() {
 							msg.Text = resp.ClearNo()
@@ -111,23 +111,22 @@ func (b *Bot) Start(logger *logging.Logger, db *sql.DB) {
 						msg.Text = resp.ClearYes()
 					}
 				case resp.IsNegative(verificationMsg):
-					isClear = false
 					msg.Text = resp.ClearallNo()
 				default:
 					msg.Text = resp.ClearallIncorrect()
 				}
-			case isClearall:
+			case curCommand[clearall]:
 				verificationMsg = strings.TrimSpace(strings.ToLower(upd.Message.Text))
 				switch {
 				case resp.IsPositive(verificationMsg):
-					isClearall = false
+					curCommand[clearall] = false
 					if _, err := db.Exec(fmt.Sprintf("DELETE FROM `users` WHERE `password` = '%s'", password)); err != nil {
 						logger.Fatal(e.Wrap("Error: deleting single note from db", err))
 					}
 					numberedNotes.Clear()
 					msg.Text = resp.ClearallYes()
 				case resp.IsNegative(verificationMsg):
-					isClearall = false
+					curCommand[clearall] = false
 					msg.Text = resp.ClearallNo()
 				default:
 					msg.Text = resp.ClearallIncorrect()
@@ -174,7 +173,7 @@ func (b *Bot) Lang(upd tgbotapi.Update, logger *logging.Logger) string {
 	}
 	return lang
 }
- 
+
 func (b *Bot) SendMessage(logger *logging.Logger, msg tgbotapi.MessageConfig) {
 	if _, err := b.bot.Send(msg); err != nil {
 		logger.Fatal(e.Wrap("Error: sending message to user", err))

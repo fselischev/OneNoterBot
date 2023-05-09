@@ -7,8 +7,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func ClearHandler(password string, msg *tgbotapi.MessageConfig, resp *response.Response, upd tgbotapi.Update, numberedNotes *linkedhashmap.Map, flag string) bool {
-	bfl := false
+func ClearHandler(password string, msg *tgbotapi.MessageConfig, resp *response.Response, upd tgbotapi.Update, numberedNotes *linkedhashmap.Map) (fl bool) {
 	if password == "" {
 		msg.Text = resp.AuthorizationFailed()
 		msg.ReplyToMessageID = upd.Message.MessageID
@@ -16,18 +15,13 @@ func ClearHandler(password string, msg *tgbotapi.MessageConfig, resp *response.R
 		if numberedNotes.Size() == 0 {
 			msg.Text = resp.EmptyNotes()
 		} else {
-			bfl = true
-			if flag == "all" {
-				msg.Text = resp.ClearallVerification()
-			} else {
-				msg.Text = resp.ClearVerification()
-			}
+			fl = true
 		}
 	}
-	return bfl
+	return
 }
 
-func WhoAmIHandler(password string, msg *tgbotapi.MessageConfig, resp *response.Response, upd tgbotapi.Update) {
+func WhoamiHandler(password string, msg *tgbotapi.MessageConfig, resp *response.Response, upd tgbotapi.Update) {
 	if password == "" {
 		msg.Text = resp.AuthorizationFailed()
 		msg.ReplyToMessageID = upd.Message.MessageID
