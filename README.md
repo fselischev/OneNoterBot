@@ -20,5 +20,7 @@ Main commands:
 That's it, if you want to make a note, you just type it to bot. <br> 
 Some time some day it will be deployed..
 
+<!---
 ## Demonstration
 [Video that demonstrates OneNoterBot functionality](https://drive.google.com/drive/folders/1QW8HBx7m9AjVDUyHlNQ20kSW8XKt-UtB?usp=sharing)
+--->
